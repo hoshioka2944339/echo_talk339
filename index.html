@@ -1,1 +1,419 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ECHOたん</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: #2a1f3d;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: 'Hiragino Maru Gothic Pro', 'Rounded Mplus 1c', sans-serif;
+    overflow: hidden;
+  }
+
+  .stars {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .star {
+    position: absolute;
+    background: white;
+    border-radius: 50%;
+    animation: twinkle 3s infinite;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.5); }
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 30px;
+  }
+
+  .title {
+    color: #f9c8e8;
+    font-size: 1.1rem;
+    letter-spacing: 0.3em;
+    margin-bottom: 8px;
+    text-shadow: 0 0 12px #f9c8e880;
+    font-weight: bold;
+  }
+
+  .echo-frame {
+    position: relative;
+    width: min(320px, 80vw);
+    margin: 8px 0;
+  }
+
+  .echo-img {
+    width: 100%;
+    border-radius: 24px;
+    display: block;
+    transition: opacity 0.2s ease;
+    filter: drop-shadow(0 8px 32px #c084fc60);
+  }
+
+  .echo-img.fade { opacity: 0; }
+
+  .emotion-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(42, 31, 61, 0.85);
+    border: 1px solid #c084fc60;
+    border-radius: 20px;
+    padding: 4px 12px;
+    color: #f9c8e8;
+    font-size: 0.75rem;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+  }
+
+  .speech-bubble {
+    background: rgba(255,255,255,0.08);
+    border: 1.5px solid rgba(249, 200, 232, 0.3);
+    border-radius: 20px;
+    padding: 14px 20px;
+    margin: 4px 0 12px;
+    width: 100%;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(12px);
+    position: relative;
+  }
+
+  .speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-bottom-color: rgba(249, 200, 232, 0.3);
+  }
+
+  .speech-text {
+    color: #fff;
+    font-size: 1.05rem;
+    text-align: center;
+    line-height: 1.6;
+    text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+    min-height: 1.6em;
+  }
+
+  .mic-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .mic-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #f472b6, #a855f7);
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 24px #f472b660;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mic-btn:active { transform: scale(0.92); }
+
+  .mic-btn.listening {
+    background: linear-gradient(135deg, #ef4444, #f97316);
+    box-shadow: 0 4px 32px #ef444480;
+    animation: pulse-mic 1s infinite;
+  }
+
+  .mic-btn.speaking {
+    background: linear-gradient(135deg, #22c55e, #10b981);
+    box-shadow: 0 4px 32px #22c55e80;
+  }
+
+  @keyframes pulse-mic {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  .wave-indicator {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    height: 24px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .wave-indicator.active { opacity: 1; }
+  .wave-bar {
+    width: 4px;
+    background: linear-gradient(#f472b6, #a855f7);
+    border-radius: 2px;
+    animation: wave 0.8s infinite ease-in-out;
+  }
+  .wave-bar:nth-child(1) { animation-delay: 0s; }
+  .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+  .wave-bar:nth-child(5) { animation-delay: 0.2s; }
+  .wave-bar:nth-child(6) { animation-delay: 0.1s; }
+  .wave-bar:nth-child(7) { animation-delay: 0s; }
+  @keyframes wave {
+    0%, 100% { height: 6px; }
+    50% { height: 22px; }
+  }
+
+  .hint-text {
+    color: rgba(249, 200, 232, 0.6);
+    font-size: 0.8rem;
+    text-align: center;
+    letter-spacing: 0.05em;
+  }
+
+  .thinking-dots { display: none; }
+  .thinking-dots.active {
+    display: inline-flex;
+    gap: 4px;
+  }
+  .thinking-dots span {
+    width: 6px; height: 6px;
+    background: #f9c8e8;
+    border-radius: 50%;
+    animation: dot-bounce 1.2s infinite;
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dot-bounce {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(-6px); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+  <div class="title">✦ E C H O た ん ✦</div>
+  
+  <div class="echo-frame">
+    <img class="echo-img" id="echoImg" src="neutral.JPG" alt="ECHOたん">
+    <div class="emotion-badge" id="emotionBadge">🌟 はじめまして</div>
+  </div>
+
+  <div class="speech-bubble">
+    <div class="speech-text" id="speechText">
+      <span id="mainText">おはなし　してね！🍭</span>
+      <span class="thinking-dots" id="thinkingDots"><span></span><span></span><span></span></span>
+    </div>
+  </div>
+
+  <div class="mic-area">
+    <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎙️</button>
+    <div class="wave-indicator" id="waveIndicator">
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+      <div class="wave-bar"></div>
+    </div>
+    <div class="hint-text" id="hintText">ボタンを　おしてね！</div>
+  </div>
+</div>
+
+<script>
+const EMOTIONS = {
+  neutral:     { label: "🌟 ふつう",       img: "neutral.JPG" },
+  happy:       { label: "😄 うれしい！",    img: "happy.JPG" },
+  down:        { label: "😢 しょんぼり",    img: "down.JPG" },
+  panic:       { label: "😱 あせってる！",  img: "panic.JPG" },
+  annoyed:     { label: "😤 むすっ",        img: "annoyed.JPG" },
+  smug:        { label: "😏 にやり",        img: "smug.JPG" },
+  thinking:    { label: "🤔 かんがえ中",   img: "thinking.JPG" },
+  crying:      { label: "😭 うるうる",      img: "crying.JPG" },
+  embarrassed: { label: "😆 はずかしい",   img: "embarrassed.JPG" },
+  shy:         { label: "🥺 もじもじ",      img: "shy.JPG" },
+};
+
+// 星生成
+(function() {
+  const c = document.getElementById('stars');
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 3 + 1;
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s;`;
+    c.appendChild(s);
+  }
+})();
+
+function setEmotion(emotion) {
+  const e = EMOTIONS[emotion] || EMOTIONS.neutral;
+  const img = document.getElementById('echoImg');
+  img.classList.add('fade');
+  setTimeout(() => {
+    img.src = e.img;
+    img.classList.remove('fade');
+  }, 150);
+  document.getElementById('emotionBadge').textContent = e.label;
+}
+
+function setText(text) {
+  document.getElementById('mainText').textContent = text;
+}
+
+function showThinking(show) {
+  document.getElementById('thinkingDots').classList.toggle('active', show);
+  if (show) document.getElementById('mainText').textContent = '';
+}
+
+let recognition = null;
+let isListening = false;
+let isSpeaking = false;
+
+function setupRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { setText('このブラウザは音声認識に対応していません😢'); return null; }
+  const r = new SR();
+  r.lang = 'ja-JP';
+  r.interimResults = false;
+  r.maxAlternatives = 1;
+  r.continuous = false;
+  r.onresult = (e) => { stopListening(); handleUserInput(e.results[0][0].transcript); };
+  r.onerror = (e) => { stopListening(); if (e.error !== 'no-speech') { setText('もういちど　おしてね！🥺'); setEmotion('down'); } };
+  r.onend = () => { if (isListening) stopListening(); };
+  return r;
+}
+
+function toggleMic() {
+  if (isSpeaking) return;
+  isListening ? stopListening() : startListening();
+}
+
+function startListening() {
+  if (!recognition) recognition = setupRecognition();
+  if (!recognition) return;
+  isListening = true;
+  recognition.start();
+  document.getElementById('micBtn').className = 'mic-btn listening';
+  document.getElementById('micBtn').textContent = '🎤';
+  document.getElementById('waveIndicator').classList.add('active');
+  document.getElementById('hintText').textContent = 'きいてるよ！はなしてね';
+  setText('・・・');
+  setEmotion('thinking');
+}
+
+function stopListening() {
+  isListening = false;
+  try { recognition.stop(); } catch(e) {}
+  document.getElementById('micBtn').className = 'mic-btn';
+  document.getElementById('micBtn').textContent = '🎙️';
+  document.getElementById('waveIndicator').classList.remove('active');
+  document.getElementById('hintText').textContent = 'ボタンを　おしてね！';
+}
+
+async function handleUserInput(userText) {
+  setText(`「${userText}」`);
+  setEmotion('thinking');
+  showThinking(true);
+  document.getElementById('hintText').textContent = 'かんがえてるよ...';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `あなたはECHOたんという2〜3歳の子供と話すかわいいキャラクターです。
+必ずJSON形式のみで返答してください。他のテキストは一切含めないでください。
+形式: {"text": "セリフ", "emotion": "感情"}
+- textはひらがな中心の短い言葉（1〜2文）、語尾に「ね！」「よ！」「だよ！」「なの！」など
+- emotionは以下から1つ選ぶ: neutral, happy, down, panic, annoyed, smug, thinking, crying, embarrassed, shy
+- 楽しく元気に！絵文字を1つだけ使っていい`,
+        messages: [{ role: 'user', content: userText }]
+      })
+    });
+
+    const data = await res.json();
+    const raw = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { parsed = { text: raw, emotion: 'happy' }; }
+
+    showThinking(false);
+    setText(parsed.text || 'えへへ🍭');
+    setEmotion(parsed.emotion || 'happy');
+    speak(parsed.text || 'えへへ');
+
+  } catch(err) {
+    showThinking(false);
+    setText('うまくいかなかった...😢');
+    setEmotion('down');
+    document.getElementById('hintText').textContent = 'もういちどためしてね';
+  }
+}
+
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'ja-JP';
+  utter.rate = 0.9;
+  utter.pitch = 1.6;
+  utter.volume = 1.0;
+  const voices = window.speechSynthesis.getVoices();
+  const jaVoice = voices.find(v => v.lang === 'ja-JP' && v.name.includes('Female'))
+    || voices.find(v => v.lang === 'ja-JP')
+    || voices.find(v => v.lang.startsWith('ja'));
+  if (jaVoice) utter.voice = jaVoice;
+
+  isSpeaking = true;
+  document.getElementById('micBtn').className = 'mic-btn speaking';
+  document.getElementById('micBtn').textContent = '🔊';
+  document.getElementById('hintText').textContent = 'はなしてるよ！';
+
+  utter.onend = () => {
+    isSpeaking = false;
+    document.getElementById('micBtn').className = 'mic-btn';
+    document.getElementById('micBtn').textContent = '🎙️';
+    document.getElementById('hintText').textContent = 'ボタンを　おしてね！';
+  };
+  window.speechSynthesis.speak(utter);
+}
+
+// iOS対策
+document.addEventListener('touchstart', function() {
+  const d = new SpeechSynthesisUtterance('');
+  window.speechSynthesis.speak(d);
+}, { once: true });
+</script>
+</body>
+</html>
 
